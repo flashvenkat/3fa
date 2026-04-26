@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block layout %}
+<style>
+    .about-page {
+        width: 100%;
+        min-height: 100vh;
+        background-color: var(--bg-right);
+        padding: 120px 40px 60px 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow-y: auto;
+    }
+
+    .about-container {
+        max-width: 1000px;
+        width: 100%;
+        animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .about-header {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .about-header h1 {
+        font-size: 3.5rem;
+        margin: 0 0 15px 0;
+        background: linear-gradient(90deg, #ffffff, #00e5ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .about-header p {
+        font-size: 1.2rem;
+        color: var(--text-muted);
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+
+    .architecture-section {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--input-border);
+        border-radius: 16px;
+        padding: 40px;
+        margin-bottom: 50px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .architecture-section h2 {
+        color: white;
+        font-size: 2rem;
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .architecture-section p {
+        color: #d1d5db;
+        line-height: 1.7;
+        font-size: 1.1rem;
+        margin-bottom: 0;
+    }
+
+    .factors-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+
+    .factor-card {
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 16px;
+        padding: 40px 30px;
+        text-align: center;
+        transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .factor-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    }
+
+    .factor-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+    }
+
+    .factor-1::before { background: linear-gradient(90deg, #ff7b72, transparent); }
+    .factor-1:hover { border-color: rgba(255, 123, 114, 0.4); }
+
+    .factor-2::before { background: linear-gradient(90deg, #3fb950, transparent); }
+    .factor-2:hover { border-color: rgba(63, 185, 80, 0.4); }
+
+    .factor-3::before { background: linear-gradient(90deg, #58a6ff, transparent); }
+    .factor-3:hover { border-color: rgba(88, 166, 255, 0.4); }
+
+    .factor-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        display: inline-block;
+    }
+
+    .factor-card h3 {
+        color: white;
+        font-size: 1.5rem;
+        margin: 0 0 15px 0;
+    }
+
+    .factor-card p {
+        color: var(--text-muted);
+        font-size: 1rem;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .tech-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 40px;
+    }
+
+    .tech-badge {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 8px 16px;
+        border-radius: 20px;
+        color: #00e5ff;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+    }
+</style>
+
+<div class="about-page">
+    <div class="about-container">
+        
+        <div class="about-header">
+            <h1>Zero Trust Architecture</h1>
+            <p>Traditional passwords are no longer enough. SECURE 3FA implements a rigorous three-factor authentication pipeline to ensure absolute certainty of identity before granting access to sensitive systems.</p>
+        </div>
+
+        <div class="architecture-section">
+            <h2>How It Works</h2>
+            <p>Our system uses a sequential verification workflow. An attacker would need to compromise your mind (password), physically steal your mobile device (TOTP), and perfectly replicate your live physical appearance (Biometrics) simultaneously to breach the system. This makes unauthorized access virtually impossible.</p>
+        </div>
+
+        <div class="factors-grid">
+            <div class="factor-card factor-1">
+                <div class="factor-icon">🧠</div>
+                <h3>1. Knowledge</h3>
+                <p><strong>Something you know.</strong><br><br>The first line of defense. We use highly secure, salted cryptographic hashing to verify your standard credentials (username and password) without ever storing the plain text.</p>
+            </div>
+
+            <div class="factor-card factor-2">
+                <div class="factor-icon">📱</div>
+                <h3>2. Possession</h3>
+                <p><strong>Something you have.</strong><br><br>A cryptographic secret is shared with your Authenticator app. It generates a unique 6-digit Time-Based One-Time Password (TOTP) that expires every 30 seconds.</p>
+            </div>
+
+            <div class="factor-card factor-3">
+                <div class="factor-icon">👁️</div>
+                <h3>3. Inherence</h3>
+                <p><strong>Something you are.</strong><br><br>The ultimate validator. Our AI-driven neural threat detection extracts 128 unique facial measurements from your webcam to mathematically prove your physical presence.</p>
+            </div>
+        </div>
+
+        <div class="tech-stack">
+            <div class="tech-badge">Python Flask</div>
+            <div class="tech-badge">JSON Web Tokens (JWT)</div>
+            <div class="tech-badge">SHA-256 Hashing</div>
+            <div class="tech-badge">Dlib Face Recognition</div>
+            <div class="tech-badge">HMAC-SHA1 TOTP</div>
+            <div class="tech-badge">SQLite3</div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

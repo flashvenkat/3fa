@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 id="form-title">Start Your<br>Journey.</h2>
+
+<div id="messageBox" class="alert hidden"></div>
+
+<div id="step1-form" class="animated-form">
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div class="input-group" style="flex: 1; margin: 0;">
+            <input type="text" id="full_name" placeholder="Full Name" required>
+        </div>
+        <div class="input-group" style="flex: 1; margin: 0;">
+            <input type="email" id="email" placeholder="Email Address" required>
+        </div>
+    </div>
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div class="input-group" style="flex: 1; margin: 0;">
+            <input type="date" id="dob" required style="color-scheme: dark;">
+        </div>
+        <div class="input-group" style="flex: 1; margin: 0;">
+            <input type="tel" id="phone" placeholder="Phone Number" required>
+        </div>
+    </div>
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div class="input-group" style="flex: 1; margin: 0;">
+            <input type="text" id="state" placeholder="State/Province" required>
+        </div>
+        <div class="input-group" style="flex: 1; margin: 0;">
+            <input type="text" id="country" placeholder="Country" required>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div class="input-group" style="flex: 1; margin: 0;">
+            <input type="text" id="username" placeholder="Username" required>
+        </div>
+    </div>
+    <div class="input-group">
+        <div class="password-wrapper">
+            <input type="password" id="password" placeholder="Password" required>
+            <span class="toggle-password" onclick="togglePassword('password', this)">👁️</span>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">Biometric Verification Required (Factor 3)</p>
+        <video autoplay="true" id="videoElement"></video>
+        <canvas id="canvas" class="hidden"></canvas>
+    </div>
+
+    <div class="checkbox-group">
+        <input type="checkbox" id="terms" checked>
+        <label for="terms">Accept terms and conditions</label>
+    </div>
+
+    <div class="divider">Or</div>
+
+    <div class="form-footer">
+        <div>Already have an account? <a href="{{ url_for('login') }}" style="color: white;">Login</a></div>
+        <button class="submit-btn" id="registerBtn" onclick="register()">
+            Sign <span style="font-size: 20px; line-height: 1;">→</span>
+        </button>
+    </div>
+</div>
+
+<div id="qr-section" class="hidden animated-form">
+    <h3>Configure Authenticator</h3>
+    <p style="color: var(--text-muted); font-size: 14px;">Scan the QR code below with Google Authenticator or Authy, then enter the 6-digit code to verify setup (Factor 2).</p>
+    <div style="text-align: center;">
+        <img id="qrCodeImg" src="" alt="TOTP QR Code" style="max-width: 100%; border-radius: 12px; margin: 20px 0;">
+    </div>
+    
+    <div class="input-group">
+        <input type="text" id="setup-totp" placeholder="6-digit Authenticator Code" required autocomplete="off">
+    </div>
+
+    <div class="form-footer" style="justify-content: flex-end;">
+        <button class="submit-btn" id="verifySetupBtn" onclick="verifySetup()">
+            Verify & Login <span style="font-size: 20px; line-height: 1;">→</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    const video = document.querySelector("#videoElement");
+    const canvas = document.querySelector("#canvas");
+    const registerBtn = document.querySelector("#registerBtn");
+    const messageBox = document.querySelector("#messageBox");
+
+    function togglePassword(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.textContent = "🙈";
+        } else {
+            input.type = "password";
+            icon.textContent = "👁️";
+        }
+    }
+
+    // Initialize WebCam
+    if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                video.srcObject = stream;
+            })
+            .catch(function (error) {
+                console.error("Webcam error:", error);
+                showMessage("Camera access is required for biometric factor.", "error");
+            });
+    }
+
+    function showMessage(msg, type) {
+        messageBox.textContent = msg;
+        messageBox.className = `alert ${type}`;
+    }
+
+    async function register() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        const terms = document.getElementById("terms").checked;
+
+        const email = document.getElementById("email").value;
+        const full_name = document.getElementById("full_name").value;
+        const dob = document.getElementById("dob").value;
+        const phone = document.getElementById("phone").value;
+        const state = document.getElementById("state").value;
+        const country = document.getElementById("country").value;
+
+        if (!username || !password || !email || !full_name) {
+            showMessage("Please fill in all required fields.", "error");
+            return;
+        }
+        
+        if (!terms) {
+            showMessage("You must accept terms and conditions.", "error");
+            return;
+        }
+
+        // Capture frame
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+
+        registerBtn.disabled = true;
+        registerBtn.innerHTML = "Processing...";
+        showMessage("Processing facial encoding...", "success");
+
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: username,
+                    password: password,
+                    email: email,
+                    full_name: full_name,
+                    dob: dob,
+                    phone: phone,
+                    state: state,
+                    country: country,
+                    face_image: dataUrl
+                })
+            });
+
+            let result;
+            try {
+                result = await response.json();
+            } catch (jsonErr) {
+                const errText = await response.text();
+                throw new Error("Server returned non-JSON response: " + errText.substring(0, 100));
+            }
+
+            if (response.ok) {
+                showMessage(result.message, "success");
+                document.getElementById('step1-form').classList.add('hidden');
+                document.getElementById('qr-section').classList.remove('hidden');
+                document.getElementById('form-title').innerHTML = "Secure<br>TOTP.";
+                document.getElementById('qrCodeImg').src = result.qr_code;
+                
+                // Stop camera
+                let stream = video.srcObject;
+                if(stream) {
+                    let tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                }
+            } else {
+                showMessage(result.error || "Registration failed.", "error");
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = `Sign <span style="font-size: 20px; line-height: 1;">→</span>`;
+            }
+        } catch (error) {
+            console.error("Registration Error:", error);
+            showMessage(error.message || "Network error occurred.", "error");
+            registerBtn.disabled = false;
+            registerBtn.innerHTML = `Sign <span style="font-size: 20px; line-height: 1;">→</span>`;
+        }
+    }
+
+    async function verifySetup() {
+        const username = document.getElementById("username").value;
+        const totpCode = document.getElementById("setup-totp").value;
+        const verifyBtn = document.getElementById("verifySetupBtn");
+
+        if (!totpCode) {
+            showMessage("Please enter the 6-digit code to verify setup.", "error");
+            return;
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = "Verifying...";
+
+        try {
+            const response = await fetch('/api/register/verify_totp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username, totp_code: totpCode })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage(result.message, "success");
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('login') }}";
+                }, 1500);
+            } else {
+                showMessage(result.error, "error");
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = `Verify & Login <span style="font-size: 20px; line-height: 1;">→</span>`;
+            }
+        } catch (error) {
+            showMessage("Network error occurred.", "error");
+            verifyBtn.disabled = false;
+            verifyBtn.innerHTML = `Verify & Login <span style="font-size: 20px; line-height: 1;">→</span>`;
+        }
+    }
+</script>
+{% endblock %}

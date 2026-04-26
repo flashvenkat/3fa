@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block layout %}
+<style>
+    .support-page {
+        width: 100%;
+        min-height: 100vh;
+        background-color: var(--bg-right);
+        padding: 120px 40px 40px 40px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .support-container {
+        max-width: 800px;
+        width: 100%;
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 16px;
+        padding: 40px;
+        animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .support-container h1 {
+        font-size: 2.5rem;
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #00e5ff;
+    }
+
+    .support-container p {
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin-bottom: 40px;
+    }
+
+    .faq-item {
+        border-bottom: 1px solid var(--input-border);
+        padding: 20px 0;
+    }
+
+    .faq-item:last-child {
+        border-bottom: none;
+    }
+
+    .faq-item h3 {
+        margin: 0 0 10px 0;
+        font-size: 1.2rem;
+        color: white;
+    }
+
+    .faq-item p {
+        margin: 0;
+        font-size: 1rem;
+    }
+</style>
+
+<div class="support-page">
+    <div class="support-container">
+        <h1>Support Center</h1>
+        <p>Need help with your 3FA setup? Check our frequently asked questions below or contact our security team.</p>
+
+        <div class="faq-item">
+            <h3>I lost my Authenticator app. How do I log in?</h3>
+            <p>If you have lost access to your Factor 2 device, you must contact your IT administrator to reset your TOTP seed. For security reasons, this cannot be bypassed.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>The facial recognition isn't detecting my face.</h3>
+            <p>Ensure you are in a well-lit environment and looking directly into the camera. Do not wear sunglasses or heavy face coverings during the biometric scan.</p>
+        </div>
+
+        <div class="faq-item">
+            <h3>My account is locked. What do I do?</h3>
+            <p>Our rate-limiting security locks accounts for 15 minutes after 5 consecutive failed attempts across any factor. Please wait 15 minutes and try again.</p>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center;">
+            <button class="submit-btn" style="margin: 0 auto;" onclick="alert('Support ticket submitted!')">Contact IT Admin</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

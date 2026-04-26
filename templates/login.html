@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 id="form-title">Welcome<br>Back.</h2>
+
+<div id="messageBox" class="alert hidden"></div>
+
+<!-- STEP 1: Credentials -->
+<div id="step1-form" class="animated-form">
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Username" required>
+    </div>
+    <div class="input-group">
+        <div class="password-wrapper">
+            <input type="password" id="password" placeholder="Password" required>
+            <span class="toggle-password" onclick="togglePassword('password', this)">👁️</span>
+        </div>
+    </div>
+
+    <div class="divider">Secure Access</div>
+
+    <div class="form-footer">
+        <div>New user? <a href="{{ url_for('register_get') }}" style="color: white;">Register Here</a></div>
+        <button class="submit-btn" id="btn-step1" onclick="submitStep1()">
+            Next <span style="font-size: 20px; line-height: 1;">→</span>
+        </button>
+    </div>
+</div>
+
+<!-- STEP 2: TOTP -->
+<div id="step2-form" class="hidden animated-form">
+    <div class="input-group">
+        <input type="text" id="totp" placeholder="6-digit Authenticator Code" required autocomplete="off">
+    </div>
+    
+    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 30px;">
+        Open your Google Authenticator or Authy app and enter the code.
+    </p>
+
+    <div class="form-footer" style="justify-content: flex-end;">
+        <button class="submit-btn" id="btn-step2" onclick="submitStep2()">
+            Verify <span style="font-size: 20px; line-height: 1;">→</span>
+        </button>
+    </div>
+</div>
+
+<!-- STEP 3: Face Verification -->
+<div id="step3-form" class="hidden animated-form">
+    <div class="input-group">
+        <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 10px;">Look directly into the camera to verify your identity.</p>
+        <video autoplay="true" id="videoElement"></video>
+        <canvas id="canvas" class="hidden"></canvas>
+    </div>
+
+    <div class="form-footer" style="justify-content: flex-end;">
+        <button class="submit-btn" id="btn-step3" onclick="submitStep3()">
+            Authenticate <span style="font-size: 20px; line-height: 1;">→</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    const video = document.querySelector("#videoElement");
+    const canvas = document.querySelector("#canvas");
+    const messageBox = document.querySelector("#messageBox");
+
+    function togglePassword(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.textContent = "🙈";
+        } else {
+            input.type = "password";
+            icon.textContent = "👁️";
+        }
+    }
+
+    function showMessage(msg, type) {
+        messageBox.textContent = msg;
+        messageBox.className = `alert ${type}`;
+    }
+
+    async function submitStep1() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        if (!username || !password) {
+            showMessage("Please fill in all fields.", "error");
+            return;
+        }
+
+        const btn = document.getElementById("btn-step1");
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/login/step1', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage(result.message, "success");
+                document.getElementById('step1-form').classList.add('hidden');
+                document.getElementById('step2-form').classList.remove('hidden');
+                document.getElementById('form-title').innerHTML = "Factor 2<br>TOTP.";
+            } else {
+                showMessage(result.error, "error");
+            }
+        } catch (error) {
+            showMessage("Network error.", "error");
+        }
+        btn.disabled = false;
+    }
+
+    async function submitStep2() {
+        const totp = document.getElementById("totp").value;
+
+        if (!totp) {
+            showMessage("Please enter the TOTP code.", "error");
+            return;
+        }
+
+        const btn = document.getElementById("btn-step2");
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/login/step2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ totp_code: totp })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage(result.message, "success");
+                document.getElementById('step2-form').classList.add('hidden');
+                document.getElementById('step3-form').classList.remove('hidden');
+                document.getElementById('form-title').innerHTML = "Factor 3<br>Biometrics.";
+                
+                // Init camera for step 3
+                if (navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(function (stream) {
+                            video.srcObject = stream;
+                        })
+                        .catch(function (error) {
+                            showMessage("Camera access is required for Factor 3.", "error");
+                        });
+                }
+            } else {
+                showMessage(result.error, "error");
+            }
+        } catch (error) {
+            showMessage("Network error.", "error");
+        }
+        btn.disabled = false;
+    }
+
+    async function submitStep3() {
+        if (!video.srcObject) {
+            showMessage("Camera not active.", "error");
+            return;
+        }
+
+        // Capture frame
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+
+        const btn = document.getElementById("btn-step3");
+        btn.disabled = true;
+        btn.innerHTML = "Verifying...";
+        showMessage("Analyzing facial geometry...", "success");
+
+        try {
+            const response = await fetch('/api/login/step3', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ face_image: dataUrl })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showMessage(result.message, "success");
+                setTimeout(() => {
+                    window.location.href = result.redirect;
+                }, 1000);
+            } else {
+                showMessage(result.error, "error");
+                btn.innerHTML = `Authenticate <span style="font-size: 20px; line-height: 1;">→</span>`;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            showMessage("Network error.", "error");
+            btn.innerHTML = `Authenticate <span style="font-size: 20px; line-height: 1;">→</span>`;
+            btn.disabled = false;
+        }
+    }
+</script>
+{% endblock %}
